@@ -123,6 +123,20 @@ class User extends Authenticatable
         return $this->followings()->where('follow_id', $userId)->exists();
     }
     /**
+     * このユーザとフォロー中ユーザの投稿に絞り込む。
+     */
+    public function feed_microposts()
+    {
+        // このユーザがフォロー中のユーザのidを取得して配列にする
+        //pluck()　引数として与えられたテーブルのカラムの値だけを抜き出す命令
+        //toArray()　通常の配列に変換
+        $userIds = $this->followings()->pluck('users.id')->toArray();
+        // このユーザのidもその配列に追加
+        $userIds[] = $this->id;
+        //microposts テーブルのデータのうち $userIds 配列のいずれかの値と合致するuser_idを持つものに絞り込んで値を返す
+        return Micropost::whereIn('user_id', $userIds);
+    }
+    /**
      * このユーザに関係するモデルの件数をロードする。
      */
     public function loadRelationshipCounts()
