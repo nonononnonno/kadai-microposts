@@ -43,7 +43,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(Micropost::class);
     }
-
     /**
      * このユーザがフォロー中のユーザ。（ Userモデルとの関係を定義）
      */
@@ -71,6 +70,7 @@ class User extends Authenticatable
      * @param  int  $userId
      * @return bool
      */
+     //この$userIdは、bladeから$idとしてUserFollowControllerに渡され、そこでfollowメソッドに$idが渡され、このfollowメソッド内で$useIdに名前が変わりそこに$idが入っている
     public function follow($userId)
     {
         // すでにフォローしているか
@@ -136,11 +136,57 @@ class User extends Authenticatable
         //microposts テーブルのデータのうち $userIds 配列のいずれかの値と合致するuser_idを持つものに絞り込んで値を返す
         return Micropost::whereIn('user_id', $userIds);
     }
+    
+    public function favorites()
+    {
+        return $this->belongsToMany(Micropost::class, 'favorites', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    public function unfavorites()
+    {
+        return $this->belongsToMany(User::class, 'favorites', 'micropost_id', 'user_id')->withTimestamps();
+    }
+    
+    public function favorite($micropostId)
+    {
+        // すでにFavしているか
+        $exist = $this->is_favorite($micropostId);
+
+        if ($exist) {
+            // Fav済み、または、自分自身の場合は何もしない
+            return ;
+        } else {
+            // 上記以外はフォローする
+            $this->favorites()->attach($micropostId);
+            return ;
+        }
+    }
+
+    public function unfavorite($micropostId)
+    {
+        // すでにFavしているか
+        $exist = $this->is_favorite($micropostId);
+
+        if ($exist) {
+            // フォロー済み、かつ、自分自身でない場合はフォローを外す
+            $this->favorites()->detach($micropostId);
+            return ;
+        } else {
+            // 上記以外の場合は何もしない
+            return ;
+        }
+    }
+
+    public function is_favorite($micropostId)
+    {
+        // Fav中micropostの中に $micropostIdのものが存在するか
+        return $this->favorites()->where('micropost_id', $micropostId)->exists();
+    }
+    
     /**
      * このユーザに関係するモデルの件数をロードする。
      */
     public function loadRelationshipCounts()
     {
-        $this->loadCount(['microposts', 'followings', 'followers']);
+        $this->loadCount(['microposts', 'followings', 'followers', 'favorites']);
     }
 }

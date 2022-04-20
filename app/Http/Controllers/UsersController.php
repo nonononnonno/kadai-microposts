@@ -28,9 +28,9 @@ class UsersController extends Controller
 
         // ユーザの投稿一覧を作成日時の降順で取得
         $microposts = $user->microposts()->orderBy('created_at', 'desc')->paginate(10);
-
         // ユーザ詳細ビューでそれらを表示
         return view('users.show', [
+            //userに$userを代入するための演算子が=>
             'user' => $user,
             'microposts' => $microposts,
         ]);
